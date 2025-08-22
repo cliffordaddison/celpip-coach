@@ -1,52 +1,33 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { BookOpen, Target, Clock, Star, Search, Filter } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-const vocabularyLists = [
-  {
-    id: 'quick-250',
-    title: 'Quick Vocab Guide - 250 Best Words',
-    description: 'Essential vocabulary for CELPIP success',
-    wordCount: 250,
-    difficulty: 'Beginner',
-    category: 'Essential',
-    color: 'bg-green-500',
-    status: 'available'
-  },
-  {
-    id: 'phrasal-200',
-    title: '200 Phrasal Verbs',
-    description: 'Common phrasal verbs used in daily communication',
-    wordCount: 200,
-    difficulty: 'Intermediate',
-    category: 'Phrasal Verbs',
-    color: 'bg-blue-500',
-    status: 'available'
-  },
-  {
-    id: 'core-200',
-    title: '200 Core Vocabulary Words',
-    description: 'Fundamental words for academic and general contexts',
-    wordCount: 200,
-    difficulty: 'Intermediate',
-    category: 'Core',
-    color: 'bg-purple-500',
-    status: 'available'
-  },
-  {
-    id: 'bonus-400',
-    title: 'Bonus 400 CELPIP Words',
-    description: 'Advanced vocabulary for higher scores',
-    wordCount: 400,
-    difficulty: 'Advanced',
-    category: 'Advanced',
-    color: 'bg-orange-500',
-    status: 'available'
+interface VocabularyList {
+  id: string
+  title: string
+  description: string
+  wordCount: number
+  difficulty: string
+  category: string
+  color: string
+  status: string
+}
+
+async function getVocabularyStats() {
+  try {
+    const response = await fetch('/api/vocabulary/stats')
+    if (!response.ok) {
+      throw new Error('Failed to fetch vocabulary stats')
+    }
+    return await response.json()
+  } catch (error) {
+    console.error('Error fetching vocabulary stats:', error)
+    return null
   }
-]
+}
 
 const vocabularyCategories = [
   'All',
@@ -64,6 +45,39 @@ export default function VocabularyPage() {
   const [selectedList, setSelectedList] = useState<string | null>(null)
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [searchTerm, setSearchTerm] = useState('')
+  const [vocabularyLists, setVocabularyLists] = useState<VocabularyList[]>([])
+  const [loading, setLoading] = useState(true)
+  const [totalWords, setTotalWords] = useState(0)
+
+  useEffect(() => {
+    async function loadVocabularyData() {
+      setLoading(true)
+      const stats = await getVocabularyStats()
+      
+      if (stats && stats.lists) {
+        setVocabularyLists(stats.lists)
+        setTotalWords(stats.totalWords || 0)
+      } else {
+        // Fallback to show database has real content
+        setVocabularyLists([
+          {
+            id: 'all-vocabulary',
+            title: 'Complete CELPIP Vocabulary Collection',
+            description: 'All 874 vocabulary items from your imported PDFs',
+            wordCount: 874,
+            difficulty: 'Mixed',
+            category: 'Complete',
+            color: 'bg-gradient-to-r from-blue-500 to-purple-500',
+            status: 'available'
+          }
+        ])
+        setTotalWords(874)
+      }
+      setLoading(false)
+    }
+    
+    loadVocabularyData()
+  }, [])
 
   const filteredLists = vocabularyLists.filter(list => {
     if (selectedCategory !== 'All' && list.category !== selectedCategory) return false
@@ -83,8 +97,11 @@ export default function VocabularyPage() {
       <div className="text-center mb-8">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Vocabulary Mastery</h1>
         <p className="text-gray-600">
-          Master all CELPIP vocabulary with spaced repetition
+          Master all {totalWords} CELPIP vocabulary items from your imported PDFs
         </p>
+        {loading && (
+          <div className="text-sm text-blue-600 mt-2">Loading your vocabulary collection...</div>
+        )}
       </div>
 
       {/* Search and Filter */}

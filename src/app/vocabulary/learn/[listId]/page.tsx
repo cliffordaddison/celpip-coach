@@ -2,11 +2,52 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, Check, X, Volume2, RotateCcw, BookOpen } from 'lucide-react'
+import { ArrowLeft, Check, X, Volume2, RotateCcw, BookOpen, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-// Comprehensive vocabulary data with many more words
-const vocabularyData = {
+interface VocabularyWord {
+  id: string
+  term: string
+  partOfSpeech: string
+  definition: string
+  example: string
+  synonyms?: string
+  antonyms?: string
+  tags: string[]
+  source: string
+  difficulty: string
+}
+
+async function getVocabularyWords(listId: string, limit: number = 100) {
+  try {
+    const params = new URLSearchParams({
+      listId,
+      limit: limit.toString(),
+      offset: '0'
+    })
+    
+    // If it's "all-vocabulary", don't filter by source
+    if (listId === 'all-vocabulary') {
+      params.delete('listId')
+    } else {
+      // Try to extract source name from listId
+      const sourceName = listId.replace(/-/g, ' ')
+      params.set('source', sourceName)
+    }
+    
+    const response = await fetch(`/api/vocabulary/words?${params}`)
+    if (!response.ok) {
+      throw new Error('Failed to fetch vocabulary words')
+    }
+    return await response.json()
+  } catch (error) {
+    console.error('Error fetching vocabulary words:', error)
+    return null
+  }
+}
+
+// Fallback data in case API fails
+const fallbackVocabularyData = {
   'quick-250': [
     { word: 'accomplish', definition: 'to succeed in doing something', example: 'She accomplished her goal of learning English.' },
     { word: 'beneficial', definition: 'helpful or advantageous', example: 'Exercise is beneficial for your health.' },
@@ -133,9 +174,64 @@ export default function VocabularyLearningPage() {
   const [correctAnswers, setCorrectAnswers] = useState(0)
   const [totalAnswered, setTotalAnswered] = useState(0)
   const [isCompleted, setIsCompleted] = useState(false)
+  const [words, setWords] = useState<VocabularyWord[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [listTitle, setListTitle] = useState('Vocabulary List')
 
-  const words = vocabularyData[listId as keyof typeof vocabularyData] || []
+  useEffect(() => {
+    async function loadVocabularyWords() {
+      setLoading(true)
+      setError(null)
+      
+      const data = await getVocabularyWords(listId)
+      
+      if (data && data.words && data.words.length > 0) {
+        setWords(data.words)
+        // Set title based on first word's source or listId
+        if (data.words[0].source) {
+          setListTitle(data.words[0].source)
+        } else {
+          setListTitle(getListTitleFromId(listId))
+        }
+      } else {
+        // Fallback to hardcoded data if API fails
+        const fallbackWords = fallbackVocabularyData[listId as keyof typeof fallbackVocabularyData] || []
+        if (fallbackWords.length > 0) {
+          const mappedWords: VocabularyWord[] = fallbackWords.map((word, index) => ({
+            id: `fallback-${index}`,
+            term: (word as any).word,
+            partOfSpeech: 'unknown',
+            definition: (word as any).definition,
+            example: (word as any).example,
+            tags: [],
+            source: 'Fallback Data',
+            difficulty: 'M'
+          }))
+          setWords(mappedWords)
+          setListTitle(getListTitleFromId(listId))
+        } else {
+          setError('No vocabulary words found for this list.')
+        }
+      }
+      setLoading(false)
+    }
+    
+    loadVocabularyWords()
+  }, [listId])
+
   const currentWord = words[currentWordIndex]
+
+  const getListTitleFromId = (id: string) => {
+    const titles: Record<string, string> = {
+      'all-vocabulary': 'Complete CELPIP Vocabulary Collection',
+      'quick-250': 'Quick Vocab Guide - 250 Best Words',
+      'phrasal-200': '200 Phrasal Verbs',
+      'core-200': '200 Core Vocabulary Words',
+      'bonus-400': 'Bonus 400 CELPIP Words'
+    }
+    return titles[id] || id.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+  }
 
   const handleShowDefinition = () => {
     setShowDefinition(true)
@@ -169,14 +265,35 @@ export default function VocabularyLearningPage() {
     setIsCompleted(false)
   }
 
-  const getListTitle = (id: string) => {
-    const titles = {
-      'quick-250': 'Quick Vocab Guide - 250 Best Words',
-      'phrasal-200': '200 Phrasal Verbs',
-      'core-200': '200 Core Vocabulary Words',
-      'bonus-400': 'Bonus 400 CELPIP Words'
-    }
-    return titles[id as keyof typeof titles] || 'Vocabulary List'
+  // Loading state
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-6 max-w-md">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
+          <h1 className="text-xl font-bold text-gray-900 mb-2">Loading Vocabulary...</h1>
+          <p className="text-gray-600">Fetching your CELPIP vocabulary from the database</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-6 max-w-md">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Error Loading Vocabulary</h1>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <button
+            onClick={() => router.push('/vocabulary')}
+            className="bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+          >
+            Back to Vocabulary Lists
+          </button>
+        </div>
+      </div>
+    )
   }
 
   if (isCompleted) {
@@ -258,7 +375,7 @@ export default function VocabularyLearningPage() {
         </button>
         
         <div className="text-center">
-          <h1 className="text-xl font-bold text-gray-900 mb-1">{getListTitle(listId)}</h1>
+          <h1 className="text-xl font-bold text-gray-900 mb-1">{listTitle}</h1>
           <p className="text-sm text-gray-600">
             Word {currentWordIndex + 1} of {words.length}
           </p>
@@ -282,7 +399,8 @@ export default function VocabularyLearningPage() {
       {/* Current Word */}
       <div className="bg-white rounded-lg p-6 shadow-sm border mb-6">
         <div className="text-center mb-6">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">{currentWord.word}</h2>
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">{currentWord.term}</h2>
+          <p className="text-sm text-gray-500 mb-4">({currentWord.partOfSpeech})</p>
           
           {!showDefinition ? (
             <button
@@ -299,7 +417,19 @@ export default function VocabularyLearningPage() {
                 <p className="text-gray-700 mb-3">{currentWord.definition}</p>
                 
                 <h3 className="font-semibold text-gray-900 mb-2">Example:</h3>
-                <p className="text-gray-700 italic">"{currentWord.example}"</p>
+                <p className="text-gray-700 italic mb-3">"{currentWord.example}"</p>
+                
+                {currentWord.synonyms && (
+                  <>
+                    <h3 className="font-semibold text-gray-900 mb-2">Synonyms:</h3>
+                    <p className="text-gray-600 mb-3">{currentWord.synonyms}</p>
+                  </>
+                )}
+                
+                <div className="flex items-center justify-between text-xs text-gray-500 mt-4">
+                  <span>Source: {currentWord.source}</span>
+                  <span>Difficulty: {currentWord.difficulty}</span>
+                </div>
               </div>
             </div>
           )}
