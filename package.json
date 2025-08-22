@@ -10,6 +10,7 @@
     "ingest:list": "tsx scripts/ingest/list.ts",
     "ingest:qa": "tsx scripts/ingest/qa.ts",
     "import:everything": "tsx scripts/ingest/import-everything.ts",
+    "deploy:setup": "npm run db:push && npm run import:everything",
     "check:db": "tsx scripts/check-db.ts",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
@@ -17,6 +18,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
+    "@planetscale/database": "^1.19.0",
     "@prisma/client": "^6.14.0",
     "@radix-ui/react-dialog": "^1.1.2",
     "@radix-ui/react-progress": "^1.1.0",
