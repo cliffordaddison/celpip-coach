@@ -69,21 +69,9 @@ export default function HomePage() {
 
   const courseModules = [
     {
-      title: '15-Hour Complete Course',
-      description: 'Comprehensive CELPIP preparation',
+      title: 'Complete CELPIP Course',
+      description: 'Comprehensive preparation with all materials',
       modules: ['Vocabulary', 'Grammar', 'Writing', 'Speaking', 'Reading', 'Listening'],
-      status: 'Available'
-    },
-    {
-      title: '5-Hour Compressed Version',
-      description: 'Quick review and key concepts',
-      modules: ['Essential Topics', 'Quick Practice', 'Key Templates'],
-      status: 'Available'
-    },
-    {
-      title: 'Mock Tests & Practice',
-      description: 'Real exam simulation',
-      modules: ['5 Challenging Tests', 'AI-Scored Tests', 'Practice Questions'],
       status: 'Available'
     }
   ]
