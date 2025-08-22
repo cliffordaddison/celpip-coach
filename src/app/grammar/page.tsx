@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { BookOpen, Target, Clock, CheckCircle, AlertCircle, Play } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -74,6 +75,7 @@ const grammarCategories = [
 ]
 
 export default function GrammarPage() {
+  const router = useRouter()
   const [selectedModule, setSelectedModule] = useState<string | null>(null)
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [searchTerm, setSearchTerm] = useState('')
@@ -83,6 +85,12 @@ export default function GrammarPage() {
     if (searchTerm && !module.title.toLowerCase().includes(searchTerm.toLowerCase())) return false
     return true
   })
+
+  const handleStartModule = () => {
+    if (selectedModule) {
+      router.push(`/grammar/learn/${selectedModule}`)
+    }
+  }
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-md">
@@ -181,7 +189,10 @@ export default function GrammarPage() {
       {/* Start Learning Button */}
       {selectedModule && (
         <div className="mb-8">
-          <button className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 transition-colors">
+          <button 
+            onClick={handleStartModule}
+            className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+          >
             Start {grammarModules.find(m => m.id === selectedModule)?.title}
           </button>
         </div>

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { BookOpen, Target, Clock, Star, Search, Filter } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -59,6 +60,7 @@ const vocabularyCategories = [
 ]
 
 export default function VocabularyPage() {
+  const router = useRouter()
   const [selectedList, setSelectedList] = useState<string | null>(null)
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [searchTerm, setSearchTerm] = useState('')
@@ -68,6 +70,12 @@ export default function VocabularyPage() {
     if (searchTerm && !list.title.toLowerCase().includes(searchTerm.toLowerCase())) return false
     return true
   })
+
+  const handleStartLearning = () => {
+    if (selectedList) {
+      router.push(`/vocabulary/learn/${selectedList}`)
+    }
+  }
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-md">
@@ -153,7 +161,10 @@ export default function VocabularyPage() {
       {/* Start Learning Button */}
       {selectedList && (
         <div className="mb-8">
-          <button className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 transition-colors">
+          <button 
+            onClick={handleStartLearning}
+            className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+          >
             Start Learning {vocabularyLists.find(l => l.id === selectedList)?.title}
           </button>
         </div>
