@@ -1,44 +1,103 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Headphones, BookOpen, Play, Clock, Target } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-const practiceModules = [
-  {
-    id: 'listening',
-    title: 'Listening Practice',
-    description: 'Improve your listening comprehension with audio clips and questions',
-    icon: Headphones,
-    color: 'bg-green-500',
-    difficulty: 'Medium',
-    timeEstimate: '15-20 min',
-    questionCount: 8,
-    status: 'available'
-  },
-  {
-    id: 'reading',
-    title: 'Reading Practice',
-    description: 'Enhance reading skills with passages and comprehension questions',
-    icon: BookOpen,
-    color: 'bg-blue-500',
-    difficulty: 'Medium',
-    timeEstimate: '20-25 min',
-    questionCount: 12,
-    status: 'available'
-  }
-]
+// This will be populated with real data from database
+const practiceModules: any[] = []
 
 export default function PracticePage() {
   const [selectedModule, setSelectedModule] = useState<string | null>(null)
+  const [practiceModules, setPracticeModules] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    async function fetchPracticeData() {
+      try {
+        setLoading(true)
+        const response = await fetch('/api/practice/materials')
+        if (response.ok) {
+          const data = await response.json()
+          // Transform API data to match the expected format
+          const transformedModules = [
+            {
+              id: 'listening',
+              title: 'Listening Practice',
+              description: `Improve listening with ${data.materials.filter((m: any) => m.type === 'listening').length} real audio clips`,
+              icon: Headphones,
+              color: 'bg-green-500',
+              difficulty: 'Medium',
+              timeEstimate: '15-20 min',
+              questionCount: data.materials.filter((m: any) => m.type === 'listening').length,
+              status: 'available'
+            },
+            {
+              id: 'reading',
+              title: 'Reading Practice',
+              description: `Enhance reading with ${data.materials.filter((m: any) => m.type === 'reading').length} real passages`,
+              icon: BookOpen,
+              color: 'bg-blue-500',
+              difficulty: 'Medium',
+              timeEstimate: '20-25 min',
+              questionCount: data.materials.filter((m: any) => m.type === 'reading').length,
+              status: 'available'
+            }
+          ]
+          setPracticeModules(transformedModules)
+        } else {
+          throw new Error('Failed to fetch practice data')
+        }
+      } catch (error) {
+        console.error('Error fetching practice data:', error)
+        setError('Failed to load practice materials')
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    fetchPracticeData()
+  }, [])
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-6 max-w-md">
+        <div className="text-center">
+          <div className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+          <h1 className="text-xl font-bold text-gray-900 mb-2">Loading Practice Materials...</h1>
+          <p className="text-gray-600">Fetching your real CELPIP practice content from the database</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-6 max-w-md">
+        <div className="text-center">
+          <h1 className="text-xl font-bold text-gray-900 mb-2">Error Loading Practice</h1>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-md">
       <div className="text-center mb-8">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Practice Modules</h1>
         <p className="text-gray-600">
-          Choose a module to practice your CELPIP skills
+          Choose a module to practice your CELPIP skills with real materials from your course
         </p>
       </div>
 

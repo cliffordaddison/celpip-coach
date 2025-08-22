@@ -4,57 +4,8 @@ import { useState, useRef, useEffect } from 'react'
 import { PenTool, Clock, Save, CheckCircle, Target, FileText } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-const writingTasks = [
-  {
-    id: 'task1',
-    title: 'Task 1: Email Writing',
-    description: 'Write a professional email based on the given scenario',
-    timeLimit: 27,
-    wordLimit: 150,
-    template: `Dear [Recipient Name],
-
-I hope this email finds you well. I am writing to [purpose of email].
-
-[Body paragraph with details and explanation]
-
-[Additional information or request if applicable]
-
-Thank you for your time and consideration. I look forward to hearing from you.
-
-Best regards,
-[Your Name]`,
-    rubric: {
-      content: 'Addresses all points clearly and completely',
-      coherence: 'Well-organized with logical flow',
-      vocabulary: 'Appropriate and varied word choice',
-      grammar: 'Accurate grammar and sentence structure',
-      taskFulfillment: 'Meets all requirements and purpose'
-    }
-  },
-  {
-    id: 'task2',
-    title: 'Task 2: Survey Response',
-    description: 'Respond to a survey question with your opinion and reasoning',
-    timeLimit: 30,
-    wordLimit: 200,
-    template: `[Introduction - State your position clearly]
-
-[First supporting point with explanation and example]
-
-[Second supporting point with explanation and example]
-
-[Counter-argument and refutation if applicable]
-
-[Conclusion - Restate position and summarize key points]`,
-    rubric: {
-      content: 'Clear position with strong supporting arguments',
-      coherence: 'Logical organization and smooth transitions',
-      vocabulary: 'Sophisticated and appropriate language',
-      grammar: 'Complex sentence structures used correctly',
-      taskFulfillment: 'Fully addresses the survey question'
-    }
-  }
-]
+// This will be populated with real data from database
+const writingTasks: any[] = []
 
 export default function WritePage() {
   const [selectedTask, setSelectedTask] = useState<string | null>(null)
@@ -65,8 +16,33 @@ export default function WritePage() {
   const [showRubric, setShowRubric] = useState(false)
   const [selfAssessment, setSelfAssessment] = useState<Record<string, number>>({})
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const [writingTasks, setWritingTasks] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const currentTask = writingTasks.find(task => task.id === selectedTask)
+
+  useEffect(() => {
+    async function fetchWritingData() {
+      try {
+        setLoading(true)
+        const response = await fetch('/api/writing/templates')
+        if (response.ok) {
+          const data = await response.json()
+          setWritingTasks(data.templates || [])
+        } else {
+          throw new Error('Failed to fetch writing data')
+        }
+      } catch (error) {
+        console.error('Error fetching writing data:', error)
+        setError('Failed to load writing templates')
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    fetchWritingData()
+  }, [])
 
   useEffect(() => {
     if (isWriting && timeRemaining > 0) {
@@ -116,13 +92,44 @@ export default function WritePage() {
     return `${mins}:${secs.toString().padStart(2, '0')}`
   }
 
+  // Loading state
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-6 max-w-md">
+        <div className="text-center">
+          <div className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+          <h1 className="text-xl font-bold text-gray-900 mb-2">Loading Writing Templates...</h1>
+          <p className="text-gray-600">Fetching your real CELPIP writing content from the database</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-6 max-w-md">
+        <div className="text-center">
+          <h1 className="text-xl font-bold text-gray-900 mb-2">Error Loading Writing</h1>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   if (!selectedTask) {
     return (
       <div className="container mx-auto px-4 py-6 max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Writing Practice</h1>
           <p className="text-gray-600">
-            Choose a writing task to practice your CELPIP writing skills
+            Choose a writing task to practice your CELPIP writing skills with {writingTasks.length} real templates
           </p>
         </div>
 
@@ -281,7 +288,7 @@ export default function WritePage() {
                       {selfAssessment[criterion] || 0}/5
                     </span>
                   </div>
-                  <p className="text-xs text-blue-700">{description}</p>
+                  <p className="text-xs text-blue-700">{String(description)}</p>
                   <div className="flex space-x-1">
                     {[1, 2, 3, 4, 5].map((score) => (
                       <button

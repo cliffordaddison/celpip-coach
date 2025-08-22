@@ -1,102 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { FileText, Clock, Target, CheckCircle, Play, BarChart3, Award } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-const mockTests = [
-  {
-    id: 'test-1',
-    title: 'Mock Test 1 - Full CELPIP',
-    description: 'Complete practice test covering all modules',
-    modules: ['Listening', 'Reading', 'Writing', 'Speaking'],
-    duration: '180 min',
-    difficulty: 'Challenging',
-    questionCount: {
-      listening: 8,
-      reading: 12,
-      writing: 2,
-      speaking: 8
-    },
-    status: 'available',
-    color: 'bg-blue-500',
-    lastAttempt: null,
-    bestScore: null
-  },
-  {
-    id: 'test-2',
-    title: 'Mock Test 2 - Advanced Level',
-    description: 'High-difficulty questions for advanced preparation',
-    modules: ['Listening', 'Reading', 'Writing', 'Speaking'],
-    duration: '180 min',
-    difficulty: 'Advanced',
-    questionCount: {
-      listening: 8,
-      reading: 12,
-      writing: 2,
-      speaking: 8
-    },
-    status: 'available',
-    color: 'bg-purple-500',
-    lastAttempt: null,
-    bestScore: null
-  },
-  {
-    id: 'test-3',
-    title: 'Mock Test 3 - Time Pressure',
-    description: 'Practice under strict time constraints',
-    modules: ['Listening', 'Reading', 'Writing', 'Speaking'],
-    duration: '150 min',
-    difficulty: 'Challenging',
-    questionCount: {
-      listening: 8,
-      reading: 12,
-      writing: 2,
-      speaking: 8
-    },
-    status: 'available',
-    color: 'bg-orange-500',
-    lastAttempt: null,
-    bestScore: null
-  },
-  {
-    id: 'test-4',
-    title: 'Mock Test 4 - Academic Focus',
-    description: 'Emphasis on academic vocabulary and structures',
-    modules: ['Listening', 'Reading', 'Writing', 'Speaking'],
-    duration: '180 min',
-    difficulty: 'Advanced',
-    questionCount: {
-      listening: 8,
-      reading: 12,
-      writing: 2,
-      speaking: 8
-    },
-    status: 'available',
-    color: 'bg-green-500',
-    lastAttempt: null,
-    bestScore: null
-  },
-  {
-    id: 'test-5',
-    title: 'Mock Test 5 - Final Challenge',
-    description: 'Ultimate test combining all difficulty levels',
-    modules: ['Listening', 'Reading', 'Writing', 'Speaking'],
-    duration: '180 min',
-    difficulty: 'Expert',
-    questionCount: {
-      listening: 8,
-      reading: 12,
-      writing: 2,
-      speaking: 8
-    },
-    status: 'available',
-    color: 'bg-red-500',
-    lastAttempt: null,
-    bestScore: null
-  }
-]
+// This will be populated with real data from database
+const mockTests: any[] = []
 
 const testCategories = [
   'All',
@@ -112,6 +22,31 @@ export default function MockTestsPage() {
   const [selectedTest, setSelectedTest] = useState<string | null>(null)
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [searchTerm, setSearchTerm] = useState('')
+  const [mockTests, setMockTests] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    async function fetchMockTestData() {
+      try {
+        setLoading(true)
+        const response = await fetch('/api/mock-tests/tests')
+        if (response.ok) {
+          const data = await response.json()
+          setMockTests(data.tests || [])
+        } else {
+          throw new Error('Failed to fetch mock test data')
+        }
+      } catch (error) {
+        console.error('Error fetching mock test data:', error)
+        setError('Failed to load mock tests')
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    fetchMockTestData()
+  }, [])
 
   const filteredTests = mockTests.filter(test => {
     if (selectedCategory !== 'All' && test.difficulty !== selectedCategory) return false
@@ -119,8 +54,8 @@ export default function MockTestsPage() {
     return true
   })
 
-  const getTotalQuestions = (test: typeof mockTests[0]) => {
-    return Object.values(test.questionCount).reduce((sum, count) => sum + count, 0)
+  const getTotalQuestions = (test: any) => {
+    return test.questionCount || 0
   }
 
   const handleStartTest = () => {
@@ -129,13 +64,44 @@ export default function MockTestsPage() {
     }
   }
 
+  // Loading state
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-6 max-w-md">
+        <div className="text-center">
+          <div className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+          <h1 className="text-xl font-bold text-gray-900 mb-2">Loading Mock Tests...</h1>
+          <p className="text-gray-600">Fetching your real CELPIP mock test content from the database</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-6 max-w-md">
+        <div className="text-center">
+          <h1 className="text-xl font-bold text-gray-900 mb-2">Error Loading Mock Tests</h1>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="container mx-auto px-4 py-6 max-w-md">
       {/* Header */}
       <div className="text-center mb-8">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Mock Tests</h1>
         <p className="text-gray-600">
-          Practice with 5 challenging CELPIP mock tests
+          Practice with {mockTests.length} real CELPIP mock tests from your course
         </p>
       </div>
 
@@ -192,14 +158,15 @@ export default function MockTestsPage() {
                 
                 <div className="mb-3">
                   <div className="flex flex-wrap gap-1">
-                    {test.modules.map((module, index) => (
-                      <span
-                        key={index}
-                        className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full"
-                      >
-                        {module}
+                    {test.totalSections ? (
+                      <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+                        {test.totalSections} sections
                       </span>
-                    ))}
+                    ) : (
+                      <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+                        Practice Test
+                      </span>
+                    )}
                   </div>
                 </div>
                 

@@ -4,46 +4,8 @@ import { useState, useRef, useEffect } from 'react'
 import { Mic, Play, Square, Clock, Save, CheckCircle, RotateCcw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-const speakingPrompts = [
-  {
-    id: 'prompt1',
-    title: 'Personal Experience',
-    description: 'Describe a memorable experience from your childhood',
-    prepTime: 30,
-    speakingTime: 60,
-    template: `Introduction: "I'd like to tell you about..."
-Main point: Describe the experience
-Details: What happened, when, where
-Impact: How it affected you
-Conclusion: Why it's memorable`,
-    rubric: {
-      fluency: 'Smooth speech with natural pauses',
-      pronunciation: 'Clear and accurate pronunciation',
-      vocabulary: 'Appropriate and varied word choice',
-      grammar: 'Correct grammar and sentence structure',
-      coherence: 'Logical organization and flow'
-    }
-  },
-  {
-    id: 'prompt2',
-    title: 'Opinion Discussion',
-    description: 'Do you think technology has improved education?',
-    prepTime: 30,
-    speakingTime: 60,
-    template: `Position: State your opinion clearly
-First reason: Explain with example
-Second reason: Provide another example
-Counter-argument: Address opposite view
-Conclusion: Restate position`,
-    rubric: {
-      fluency: 'Smooth speech with natural pauses',
-      pronunciation: 'Clear and accurate pronunciation',
-      vocabulary: 'Appropriate and varied word choice',
-      grammar: 'Correct grammar and sentence structure',
-      coherence: 'Logical organization and flow'
-    }
-  }
-]
+// This will be populated with real data from database
+const speakingPrompts: any[] = []
 
 export default function SpeakPage() {
   const [selectedPrompt, setSelectedPrompt] = useState<string | null>(null)
@@ -57,10 +19,35 @@ export default function SpeakPage() {
   const [showRubric, setShowRubric] = useState(false)
   const [selfAssessment, setSelfAssessment] = useState<Record<string, number>>({})
   const [transcript, setTranscript] = useState('')
+  const [speakingPrompts, setSpeakingPrompts] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
   const currentPrompt = speakingPrompts.find(prompt => prompt.id === selectedPrompt)
+
+  useEffect(() => {
+    async function fetchSpeakingData() {
+      try {
+        setLoading(true)
+        const response = await fetch('/api/speaking/templates')
+        if (response.ok) {
+          const data = await response.json()
+          setSpeakingPrompts(data.templates || [])
+        } else {
+          throw new Error('Failed to fetch speaking data')
+        }
+      } catch (error) {
+        console.error('Error fetching speaking data:', error)
+        setError('Failed to load speaking templates')
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    fetchSpeakingData()
+  }, [])
 
   useEffect(() => {
     if (isPreparing && prepTimeRemaining > 0) {
@@ -161,13 +148,44 @@ export default function SpeakPage() {
     return `${mins}:${secs.toString().padStart(2, '0')}`
   }
 
+  // Loading state
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-6 max-w-md">
+        <div className="text-center">
+          <div className="w-8 h-8 animate-spin mx-auto mb-4 text-orange-600 border-2 border-orange-600 border-t-transparent rounded-full"></div>
+          <h1 className="text-xl font-bold text-gray-900 mb-2">Loading Speaking Templates...</h1>
+          <p className="text-gray-600">Fetching your real CELPIP speaking content from the database</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-6 max-w-md">
+        <div className="text-center">
+          <h1 className="text-xl font-bold text-gray-900 mb-2">Error Loading Speaking</h1>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-orange-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-orange-700 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   if (!selectedPrompt) {
     return (
       <div className="container mx-auto px-4 py-6 max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Speaking Practice</h1>
           <p className="text-gray-600">
-            Choose a speaking prompt to practice your CELPIP speaking skills
+            Choose a speaking prompt to practice your CELPIP speaking skills with {speakingPrompts.length} real templates
           </p>
         </div>
 
@@ -350,7 +368,7 @@ export default function SpeakPage() {
                   {selfAssessment[criterion] || 0}/5
                 </span>
               </div>
-              <p className="text-xs text-blue-700">{description}</p>
+              <p className="text-xs text-blue-700">{String(description)}</p>
               <div className="flex space-x-1">
                 {[1, 2, 3, 4, 5].map((score) => (
                   <button
