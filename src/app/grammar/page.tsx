@@ -1,67 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { BookOpen, Target, Clock, CheckCircle, AlertCircle, Play } from 'lucide-react'
+import { BookOpen, Target, Clock, CheckCircle, AlertCircle, Play, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-const grammarModules = [
-  {
-    id: 'basic-grammar',
-    title: 'Basic Grammar Fundamentals',
-    description: 'Essential grammar rules for CELPIP success',
-    topics: ['Parts of Speech', 'Sentence Structure', 'Basic Tenses'],
-    difficulty: 'Beginner',
-    timeEstimate: '30-45 min',
-    questionCount: 20,
-    status: 'available',
-    color: 'bg-green-500'
-  },
-  {
-    id: 'advanced-tenses',
-    title: 'Advanced Tenses & Verb Forms',
-    description: 'Master complex verb tenses and forms',
-    topics: ['Perfect Tenses', 'Conditional Forms', 'Passive Voice'],
-    difficulty: 'Intermediate',
-    timeEstimate: '45-60 min',
-    questionCount: 25,
-    status: 'available',
-    color: 'bg-blue-500'
-  },
-  {
-    id: 'sentence-structure',
-    title: 'Complex Sentence Structures',
-    description: 'Learn to write sophisticated sentences',
-    topics: ['Compound Sentences', 'Complex Sentences', 'Parallel Structure'],
-    difficulty: 'Intermediate',
-    timeEstimate: '40-55 min',
-    questionCount: 22,
-    status: 'available',
-    color: 'bg-purple-500'
-  },
-  {
-    id: 'punctuation',
-    title: 'Punctuation & Mechanics',
-    description: 'Master punctuation rules and usage',
-    topics: ['Commas', 'Semicolons', 'Apostrophes', 'Quotation Marks'],
-    difficulty: 'Intermediate',
-    timeEstimate: '35-50 min',
-    questionCount: 18,
-    status: 'available',
-    color: 'bg-orange-500'
-  },
-  {
-    id: 'common-errors',
-    title: 'Common Grammar Errors',
-    description: 'Identify and fix frequent mistakes',
-    topics: ['Subject-Verb Agreement', 'Pronoun Usage', 'Article Usage'],
-    difficulty: 'Advanced',
-    timeEstimate: '50-65 min',
-    questionCount: 30,
-    status: 'available',
-    color: 'bg-red-500'
-  }
-]
+// This will be populated with real data from database
+const grammarModules: any[] = []
 
 const grammarCategories = [
   'All',
@@ -79,6 +24,31 @@ export default function GrammarPage() {
   const [selectedModule, setSelectedModule] = useState<string | null>(null)
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [searchTerm, setSearchTerm] = useState('')
+  const [grammarModules, setGrammarModules] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    async function fetchGrammarData() {
+      try {
+        setLoading(true)
+        const response = await fetch('/api/grammar/modules')
+        if (response.ok) {
+          const data = await response.json()
+          setGrammarModules(data.modules || [])
+        } else {
+          throw new Error('Failed to fetch grammar data')
+        }
+      } catch (error) {
+        console.error('Error fetching grammar data:', error)
+        setError('Failed to load grammar materials')
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    fetchGrammarData()
+  }, [])
 
   const filteredModules = grammarModules.filter(module => {
     if (selectedCategory !== 'All' && module.difficulty !== selectedCategory) return false
@@ -92,13 +62,45 @@ export default function GrammarPage() {
     }
   }
 
+  // Loading state
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-6 max-w-md">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
+          <h1 className="text-xl font-bold text-gray-900 mb-2">Loading Grammar Materials...</h1>
+          <p className="text-gray-600">Fetching your real CELPIP grammar content from the database</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-6 max-w-md">
+        <div className="text-center">
+          <AlertCircle className="w-8 h-8 text-red-600 mx-auto mb-4" />
+          <h1 className="text-xl font-bold text-gray-900 mb-2">Error Loading Grammar</h1>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="container mx-auto px-4 py-6 max-w-md">
       {/* Header */}
       <div className="text-center mb-8">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Grammar Training</h1>
         <p className="text-gray-600">
-          Master English grammar with comprehensive lessons and practice
+          Master English grammar with {grammarModules.length} real lessons from your CELPIP course
         </p>
       </div>
 
@@ -155,7 +157,7 @@ export default function GrammarPage() {
                 
                 <div className="mb-3">
                   <div className="flex flex-wrap gap-1">
-                    {module.topics.map((topic, index) => (
+                    {module.topics.map((topic: string, index: number) => (
                       <span
                         key={index}
                         className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full"
