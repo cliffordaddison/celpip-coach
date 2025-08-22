@@ -10,9 +10,35 @@ export default function HomePage() {
   const [streak, setStreak] = useState(0)
   const [todayCards, setTodayCards] = useState(0)
   const [completedToday, setCompletedToday] = useState(0)
+  const [stats, setStats] = useState({
+    vocabulary: 0,
+    grammar: 0,
+    writing: 0,
+    speaking: 0,
+    mockTests: 0,
+    practice: 0
+  })
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000)
+    
+    // Fetch real stats from database
+    async function fetchStats() {
+      try {
+        const response = await fetch('/api/dashboard/stats')
+        if (response.ok) {
+          const data = await response.json()
+          setStats(data)
+        }
+      } catch (error) {
+        console.error('Error fetching stats:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    fetchStats()
     return () => clearInterval(timer)
   }, [])
 
@@ -21,49 +47,49 @@ export default function HomePage() {
       href: '/vocabulary',
       icon: BookOpen,
       label: 'Vocabulary',
-      count: 1050,
+      count: stats.vocabulary,
       color: 'bg-green-500',
-      description: '4 comprehensive word lists'
+      description: 'Real vocabulary from your PDFs'
     },
     {
       href: '/grammar',
       icon: Target,
       label: 'Grammar',
-      count: 5,
+      count: stats.grammar,
       color: 'bg-blue-500',
-      description: 'Complete English course'
+      description: 'Grammar lessons from your course'
     },
     {
       href: '/practice',
       icon: Play,
       label: 'Practice',
-      count: 2,
+      count: stats.practice,
       color: 'bg-purple-500',
-      description: 'Listening & Reading'
+      description: 'Reading & Listening practice'
     },
     {
       href: '/write',
       icon: PenTool,
       label: 'Writing',
-      count: 2,
+      count: stats.writing,
       color: 'bg-orange-500',
-      description: 'Task 1 & 2 practice'
+      description: 'Writing templates & tasks'
     },
     {
       href: '/speak',
       icon: Mic,
       label: 'Speaking',
-      count: 2,
+      count: stats.speaking,
       color: 'bg-red-500',
-      description: 'With templates'
+      description: 'Speaking templates & practice'
     },
     {
       href: '/mock-tests',
       icon: FileText,
       label: 'Mock Tests',
-      count: 5,
+      count: stats.mockTests,
       color: 'bg-indigo-500',
-      description: 'Full CELPIP tests'
+      description: 'Full CELPIP mock tests'
     }
   ]
 
@@ -178,23 +204,23 @@ export default function HomePage() {
         <div className="space-y-3">
           <div className="flex justify-between items-center">
             <span className="text-sm text-gray-600">Vocabulary Reviews</span>
-            <span className="font-medium">0 / 1050</span>
+            <span className="font-medium">0 / {stats.vocabulary}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-sm text-gray-600">Grammar Lessons</span>
-            <span className="font-medium">0 / 5</span>
+            <span className="font-medium">0 / {stats.grammar}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-sm text-gray-600">Writing Tasks</span>
-            <span className="font-medium">0 / 2</span>
+            <span className="font-medium">0 / {stats.writing}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-sm text-gray-600">Speaking Practice</span>
-            <span className="font-medium">0 / 2</span>
+            <span className="font-medium">0 / {stats.speaking}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-sm text-gray-600">Mock Tests</span>
-            <span className="font-medium">0 / 5</span>
+            <span className="font-medium">0 / {stats.mockTests}</span>
           </div>
         </div>
         <Link
