@@ -1,222 +1,284 @@
 'use client'
 
-import { useState } from 'react'
-import { BarChart3, TrendingUp, Target, Calendar, BookOpen, PenTool, Mic, Headphones } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { BarChart3, Target, TrendingUp, Award, Calendar, Clock, CheckCircle, BookOpen, FileText, PenTool } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-// Sample data for demonstration
-const weeklyData = [
-  { day: 'Mon', vocab: 15, practice: 2, writing: 1, speaking: 1 },
-  { day: 'Tue', vocab: 12, practice: 1, writing: 0, speaking: 1 },
-  { day: 'Wed', vocab: 18, practice: 3, writing: 1, speaking: 0 },
-  { day: 'Thu', vocab: 10, practice: 2, writing: 0, speaking: 1 },
-  { day: 'Fri', vocab: 20, practice: 2, writing: 1, speaking: 1 },
-  { day: 'Sat', vocab: 8, practice: 1, writing: 0, speaking: 0 },
-  { day: 'Sun', vocab: 14, practice: 2, writing: 1, speaking: 1 }
-]
-
-const skillProgress = [
-  { skill: 'Vocabulary', current: 75, target: 90, color: 'bg-blue-500' },
-  { skill: 'Listening', current: 68, target: 85, color: 'bg-green-500' },
-  { skill: 'Reading', current: 72, target: 88, color: 'bg-purple-500' },
-  { skill: 'Writing', current: 65, target: 82, color: 'bg-orange-500' },
-  { skill: 'Speaking', current: 70, target: 85, color: 'bg-red-500' }
-]
-
-const recentAchievements = [
-  { type: 'vocab', title: 'Completed 100 vocabulary reviews', date: '2 days ago', icon: BookOpen },
-  { type: 'practice', title: 'Achieved 80% on Listening Test 3', date: '1 week ago', icon: Headphones },
-  { type: 'writing', title: 'Completed Writing Task 1', date: '3 days ago', icon: PenTool },
-  { type: 'speaking', title: 'Recorded 5 speaking attempts', date: '5 days ago', icon: Mic }
-]
+// Mock progress data - in a real app, this would come from a database
+const mockProgressData = {
+  vocabulary: {
+    'quick-250': { completed: 45, total: 250, lastStudied: '2024-01-15' },
+    'phrasal-200': { completed: 32, total: 200, lastStudied: '2024-01-14' },
+    'core-200': { completed: 18, total: 200, lastStudied: '2024-01-13' },
+    'bonus-400': { completed: 67, total: 400, lastStudied: '2024-01-12' }
+  },
+  grammar: {
+    'basic-grammar': { completed: 15, total: 20, lastStudied: '2024-01-15' },
+    'advanced-tenses': { completed: 22, total: 25, lastStudied: '2024-01-14' },
+    'sentence-structure': { completed: 18, total: 22, lastStudied: '2024-01-13' },
+    'punctuation': { completed: 12, total: 18, lastStudied: '2024-01-12' },
+    'common-errors': { completed: 25, total: 30, lastStudied: '2024-01-11' }
+  },
+  mockTests: {
+    'test-1': { completed: true, score: 85, lastAttempt: '2024-01-15' },
+    'test-2': { completed: true, score: 78, lastAttempt: '2024-01-14' },
+    'test-3': { completed: false, score: null, lastAttempt: null },
+    'test-4': { completed: false, score: null, lastAttempt: null },
+    'test-5': { completed: false, score: null, lastAttempt: null }
+  },
+  writing: {
+    'task-1': { completed: 8, total: 10, lastPracticed: '2024-01-15' },
+    'task-2': { completed: 6, total: 10, lastPracticed: '2024-01-14' }
+  },
+  speaking: {
+    'personal-experience': { completed: 12, total: 15, lastPracticed: '2024-01-15' },
+    'opinion-discussion': { completed: 9, total: 15, lastPracticed: '2024-01-14' }
+  }
+}
 
 export default function ProgressPage() {
-  const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'year'>('week')
+  const [selectedModule, setSelectedModule] = useState('overview')
+  const [progressData] = useState(mockProgressData)
 
-  const totalVocab = weeklyData.reduce((sum, day) => sum + day.vocab, 0)
-  const totalPractice = weeklyData.reduce((sum, day) => sum + day.practice, 0)
-  const totalWriting = weeklyData.reduce((sum, day) => sum + day.writing, 0)
-  const totalSpeaking = weeklyData.reduce((sum, day) => sum + day.speaking, 0)
+  const getOverallProgress = () => {
+    const totalItems = Object.values(progressData).reduce((sum, module) => {
+      return sum + Object.keys(module).length
+    }, 0)
+    
+    const completedItems = Object.values(progressData).reduce((sum, module) => {
+      return sum + Object.values(module).filter(item => 
+        item.completed || (item.score && item.score > 0)
+      ).length
+    }, 0)
+    
+    return Math.round((completedItems / totalItems) * 100)
+  }
 
-  const currentStreak = 7 // Sample data
-  const targetScore = 10
-  const estimatedScore = 8.5
+  const getVocabularyProgress = () => {
+    const totalWords = Object.values(progressData.vocabulary).reduce((sum, list) => sum + list.total, 0)
+    const completedWords = Object.values(progressData.vocabulary).reduce((sum, list) => sum + list.completed, 0)
+    return Math.round((completedWords / totalWords) * 100)
+  }
+
+  const getGrammarProgress = () => {
+    const totalQuestions = Object.values(progressData.grammar).reduce((sum, module) => sum + module.total, 0)
+    const completedQuestions = Object.values(progressData.grammar).reduce((sum, module) => sum + module.completed, 0)
+    return Math.round((completedQuestions / totalQuestions) * 100)
+  }
+
+  const getTestProgress = () => {
+    const completedTests = Object.values(progressData.mockTests).filter(test => test.completed).length
+    return Math.round((completedTests / 5) * 100)
+  }
+
+  const getWritingProgress = () => {
+    const totalTasks = Object.values(progressData.writing).reduce((sum, task) => sum + task.total, 0)
+    const completedTasks = Object.values(progressData.writing).reduce((sum, task) => sum + task.completed, 0)
+    return Math.round((completedTasks / totalTasks) * 100)
+  }
+
+  const getSpeakingProgress = () => {
+    const totalPrompts = Object.values(progressData.speaking).reduce((sum, prompt) => sum + prompt.total, 0)
+    const completedPrompts = Object.values(progressData.speaking).reduce((sum, prompt) => sum + prompt.completed, 0)
+    return Math.round((completedPrompts / totalPrompts) * 100)
+  }
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric' 
+    })
+  }
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-md">
+      {/* Header */}
       <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Progress Dashboard</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Your Progress</h1>
         <p className="text-gray-600">
-          Track your CELPIP preparation progress
+          Track your CELPIP preparation journey
         </p>
       </div>
 
-      {/* Period Selector */}
-      <div className="bg-white rounded-lg p-4 shadow-sm border mb-6">
-        <div className="flex space-x-2">
-          {(['week', 'month', 'year'] as const).map((period) => (
-            <button
-              key={period}
-              onClick={() => setSelectedPeriod(period)}
-              className={cn(
-                'flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors',
-                selectedPeriod === period
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              )}
-            >
-              {period.charAt(0).toUpperCase() + period.slice(1)}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Overview Stats */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        <div className="bg-white rounded-lg p-4 shadow-sm border">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Current Streak</p>
-              <p className="text-2xl font-bold text-blue-600">{currentStreak} days</p>
-            </div>
-            <TrendingUp className="w-8 h-8 text-blue-500" />
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-lg p-4 shadow-sm border">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Target Score</p>
-              <p className="text-2xl font-bold text-green-600">{targetScore}+</p>
-            </div>
-            <Target className="w-8 h-8 text-green-500" />
-          </div>
-        </div>
-      </div>
-
-      {/* Weekly Activity */}
-      <div className="bg-white rounded-lg p-4 shadow-sm border mb-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">This Week's Activity</h2>
-        
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <BookOpen className="w-5 h-5 text-blue-500" />
-              <span className="text-sm text-gray-600">Vocabulary Reviews</span>
-            </div>
-            <span className="font-medium">{totalVocab}</span>
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Headphones className="w-5 h-5 text-green-500" />
-              <span className="text-sm text-gray-600">Practice Sessions</span>
-            </div>
-            <span className="font-medium">{totalPractice}</span>
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <PenTool className="w-5 h-5 text-purple-500" />
-              <span className="text-sm text-gray-600">Writing Tasks</span>
-            </div>
-            <span className="font-medium">{totalWriting}</span>
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Mic className="w-5 h-5 text-orange-500" />
-              <span className="text-sm text-gray-600">Speaking Practice</span>
-            </div>
-            <span className="font-medium">{totalSpeaking}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Skill Progress */}
-      <div className="bg-white rounded-lg p-4 shadow-sm border mb-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Skill Progress</h2>
-        
-        <div className="space-y-4">
-          {skillProgress.map((skill) => (
-            <div key={skill.skill} className="space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-700">{skill.skill}</span>
-                <span className="text-sm text-gray-500">
-                  {skill.current}/{skill.target}
-                </span>
-              </div>
-              
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div
-                  className={cn('h-2 rounded-full transition-all duration-300', skill.color)}
-                  style={{ width: `${(skill.current / skill.target) * 100}%` }}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Weekly Chart */}
-      <div className="bg-white rounded-lg p-4 shadow-sm border mb-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Weekly Activity Chart</h2>
-        
-        <div className="space-y-3">
-          {weeklyData.map((day) => (
-            <div key={day.day} className="flex items-center space-x-3">
-              <div className="w-12 text-sm text-gray-600 font-medium">{day.day}</div>
-              <div className="flex-1 flex space-x-1">
-                {Array.from({ length: Math.max(day.vocab, day.practice, day.writing, day.speaking) }, (_, i) => (
-                  <div
-                    key={i}
-                    className={cn(
-                      'h-3 rounded-sm flex-1',
-                      i < day.vocab ? 'bg-blue-400' : 'bg-gray-200'
-                    )}
-                  />
-                ))}
-              </div>
-              <div className="w-16 text-right text-xs text-gray-500">
-                {day.vocab + day.practice + day.writing + day.speaking} activities
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Recent Achievements */}
-      <div className="bg-white rounded-lg p-4 shadow-sm border mb-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Achievements</h2>
-        
-        <div className="space-y-3">
-          {recentAchievements.map((achievement, index) => (
-            <div key={index} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
-              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                <achievement.icon className="w-4 h-4 text-blue-600" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900">{achievement.title}</p>
-                <p className="text-xs text-gray-500">{achievement.date}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Estimated Score */}
-      <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-4 text-white">
-        <h3 className="font-semibold mb-2">Estimated CELPIP Score</h3>
+      {/* Overall Progress */}
+      <div className="bg-white rounded-lg p-6 shadow-sm border mb-6">
         <div className="text-center">
-          <div className="text-3xl font-bold mb-1">{estimatedScore}</div>
-          <p className="text-sm opacity-90">
-            Based on your recent performance
-          </p>
+          <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-2xl font-bold text-white">{getOverallProgress()}%</span>
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Overall Progress</h2>
+          <p className="text-sm text-gray-600">Complete CELPIP preparation</p>
         </div>
-        <div className="mt-3 text-center">
-          <p className="text-sm opacity-90">
-            Target: {targetScore}+ | Gap: {Math.max(0, targetScore - estimatedScore).toFixed(1)} points
-          </p>
+      </div>
+
+      {/* Module Progress Cards */}
+      <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="bg-white rounded-lg p-4 shadow-sm border text-center">
+          <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+            <BookOpen className="w-6 h-6 text-blue-600" />
+          </div>
+          <div className="text-2xl font-bold text-blue-600">{getVocabularyProgress()}%</div>
+          <div className="text-sm text-gray-600">Vocabulary</div>
+        </div>
+        
+        <div className="bg-white rounded-lg p-4 shadow-sm border text-center">
+          <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+            <Target className="w-6 h-6 text-green-600" />
+          </div>
+          <div className="text-2xl font-bold text-green-600">{getGrammarProgress()}%</div>
+          <div className="text-sm text-gray-600">Grammar</div>
+        </div>
+        
+        <div className="bg-white rounded-lg p-4 shadow-sm border text-center">
+          <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+            <FileText className="w-6 h-6 text-purple-600" />
+          </div>
+          <div className="text-2xl font-bold text-purple-600">{getTestProgress()}%</div>
+          <div className="text-sm text-gray-600">Mock Tests</div>
+        </div>
+        
+        <div className="bg-white rounded-lg p-4 shadow-sm border text-center">
+          <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+            <PenTool className="w-6 h-6 text-orange-600" />
+          </div>
+          <div className="text-2xl font-bold text-orange-600">{getWritingProgress()}%</div>
+          <div className="text-sm text-gray-600">Writing</div>
+        </div>
+      </div>
+
+      {/* Detailed Progress Sections */}
+      <div className="space-y-4 mb-6">
+        {/* Vocabulary Progress */}
+        <div className="bg-white rounded-lg p-4 shadow-sm border">
+          <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
+            <BookOpen className="w-4 h-4 mr-2 text-blue-600" />
+            Vocabulary Progress
+          </h3>
+          <div className="space-y-3">
+            {Object.entries(progressData.vocabulary).map(([listId, data]) => (
+              <div key={listId} className="flex items-center justify-between">
+                <div className="flex-1">
+                  <div className="text-sm font-medium text-gray-900">
+                    {listId === 'quick-250' ? 'Quick 250 Words' :
+                     listId === 'phrasal-200' ? '200 Phrasal Verbs' :
+                     listId === 'core-200' ? '200 Core Words' : '400 Bonus Words'}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    Last studied: {formatDate(data.lastStudied)}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm font-medium text-gray-900">
+                    {Math.round((data.completed / data.total) * 100)}%
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {data.completed}/{data.total}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Grammar Progress */}
+        <div className="bg-white rounded-lg p-4 shadow-sm border">
+          <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
+            <Target className="w-4 h-4 mr-2 text-green-600" />
+            Grammar Progress
+          </h3>
+          <div className="space-y-3">
+            {Object.entries(progressData.grammar).map(([moduleId, data]) => (
+              <div key={moduleId} className="flex items-center justify-between">
+                <div className="flex-1">
+                  <div className="text-sm font-medium text-gray-900">
+                    {moduleId === 'basic-grammar' ? 'Basic Grammar' :
+                     moduleId === 'advanced-tenses' ? 'Advanced Tenses' :
+                     moduleId === 'sentence-structure' ? 'Sentence Structure' :
+                     moduleId === 'punctuation' ? 'Punctuation' : 'Common Errors'}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    Last studied: {formatDate(data.lastStudied)}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm font-medium text-gray-900">
+                    {Math.round((data.completed / data.total) * 100)}%
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {data.completed}/{data.total}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Mock Tests Progress */}
+        <div className="bg-white rounded-lg p-4 shadow-sm border">
+          <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
+            <FileText className="w-4 h-4 mr-2 text-purple-600" />
+            Mock Tests Progress
+          </h3>
+          <div className="space-y-3">
+            {Object.entries(progressData.mockTests).map(([testId, data]) => (
+              <div key={testId} className="flex items-center justify-between">
+                <div className="flex-1">
+                  <div className="text-sm font-medium text-gray-900">
+                    {testId === 'test-1' ? 'Test 1 - Full CELPIP' :
+                     testId === 'test-2' ? 'Test 2 - Advanced' :
+                     testId === 'test-3' ? 'Test 3 - Time Pressure' :
+                     testId === 'test-4' ? 'Test 4 - Academic' : 'Test 5 - Final Challenge'}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {data.completed && data.lastAttempt ? `Completed: ${formatDate(data.lastAttempt)}` : 'Not attempted'}
+                  </div>
+                </div>
+                <div className="text-right">
+                  {data.completed ? (
+                    <div className="flex items-center space-x-2">
+                      <CheckCircle className="w-4 h-4 text-green-600" />
+                      <span className="text-sm font-medium text-green-600">{data.score}%</span>
+                    </div>
+                  ) : (
+                    <div className="text-sm text-gray-400">Not started</div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Study Streak */}
+      <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-4 text-white mb-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-semibold mb-1">Study Streak</h3>
+            <p className="text-sm opacity-90">Keep up the great work!</p>
+          </div>
+          <div className="text-right">
+            <div className="text-2xl font-bold">7 days</div>
+            <div className="text-sm opacity-90">Current streak</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="bg-white rounded-lg p-4 shadow-sm border">
+        <h3 className="font-semibold text-gray-900 mb-3">Quick Actions</h3>
+        <div className="grid grid-cols-2 gap-3">
+          <button className="p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+            <div className="text-center">
+              <TrendingUp className="w-5 h-5 text-blue-600 mx-auto mb-1" />
+              <span className="text-sm font-medium text-blue-800">Continue Learning</span>
+            </div>
+          </button>
+          <button className="p-3 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
+            <div className="text-center">
+              <Award className="w-5 h-5 text-green-600 mx-auto mb-1" />
+              <span className="text-sm font-medium text-green-800">View Achievements</span>
+            </div>
+          </button>
         </div>
       </div>
     </div>

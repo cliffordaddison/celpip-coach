@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { FileText, Clock, Target, CheckCircle, Play, BarChart3, Award } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -107,6 +108,7 @@ const testCategories = [
 ]
 
 export default function MockTestsPage() {
+  const router = useRouter()
   const [selectedTest, setSelectedTest] = useState<string | null>(null)
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [searchTerm, setSearchTerm] = useState('')
@@ -119,6 +121,12 @@ export default function MockTestsPage() {
 
   const getTotalQuestions = (test: typeof mockTests[0]) => {
     return Object.values(test.questionCount).reduce((sum, count) => sum + count, 0)
+  }
+
+  const handleStartTest = () => {
+    if (selectedTest) {
+      router.push(`/mock-tests/learn/${selectedTest}`)
+    }
   }
 
   return (
@@ -232,7 +240,10 @@ export default function MockTestsPage() {
       {/* Start Test Button */}
       {selectedTest && (
         <div className="mb-8">
-          <button className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 transition-colors">
+          <button 
+            onClick={handleStartTest}
+            className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+          >
             Start {mockTests.find(t => t.id === selectedTest)?.title}
           </button>
         </div>

@@ -44,13 +44,13 @@ const resourceCategories = [
   {
     id: 'speaking-templates',
     title: 'Speaking Templates',
-    description: 'HZad speaking templates and guides',
+    description: 'Professional speaking response templates',
     icon: Mic,
     color: 'bg-orange-500',
     resources: [
       {
-        id: 'hzad-speaking',
-        title: 'HZad Speaking Templates',
+        id: 'speaking-templates',
+        title: 'Speaking Response Templates',
         description: 'Complete speaking response templates',
         type: 'Template',
         size: '4.2 MB',

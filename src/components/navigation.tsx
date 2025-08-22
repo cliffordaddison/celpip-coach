@@ -2,27 +2,25 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, BookOpen, PenTool, Mic, BarChart3, Target, FileText, Settings } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Home, BookOpen, PenTool, Mic, BarChart3, Target, FileText } from 'lucide-react'
 
 const navItems = [
   { href: '/', icon: Home, label: 'Home' },
   { href: '/vocabulary', icon: BookOpen, label: 'Vocabulary' },
   { href: '/grammar', icon: Target, label: 'Grammar' },
-  { href: '/practice', icon: PenTool, label: 'Practice' },
   { href: '/write', icon: PenTool, label: 'Write' },
   { href: '/speak', icon: Mic, label: 'Speak' },
   { href: '/mock-tests', icon: FileText, label: 'Tests' },
-  { href: '/resources', icon: BookOpen, label: 'Resources' },
   { href: '/progress', icon: BarChart3, label: 'Progress' },
 ]
 
-export function Navigation() {
+export default function Navigation() {
   const pathname = usePathname()
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
-      <div className="flex justify-around items-center h-16 px-1">
+    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-2 z-50">
+      <div className="flex justify-around items-center max-w-md mx-auto">
         {navItems.map((item) => {
           const isActive = pathname === item.href
           return (
@@ -30,14 +28,16 @@ export function Navigation() {
               key={item.href}
               href={item.href}
               className={cn(
-                'flex flex-col items-center justify-center flex-1 h-full transition-colors min-w-0',
+                'flex flex-col items-center space-y-1 p-2 rounded-lg transition-colors min-w-0',
                 isActive
                   ? 'text-blue-600 bg-blue-50'
-                  : 'text-gray-600 hover:text-blue-600'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
               )}
             >
-              <item.icon className="w-4 h-4 mb-1" />
-              <span className="text-xs font-medium truncate px-1">{item.label}</span>
+              <item.icon className="w-5 h-5" />
+              <span className="text-xs font-medium truncate max-w-16">
+                {item.label}
+              </span>
             </Link>
           )
         })}
