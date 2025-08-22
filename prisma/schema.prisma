@@ -1,0 +1,294 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  profile     Profile?
+  srsCards    SrsCard[]
+  reviewLogs  ReviewLog[]
+  writingDrafts WritingDraft[]
+  speakingAttempts SpeakingAttempt[]
+  progressSnapshots ProgressSnapshot[]
+  goals       Goal[]
+  settings    Setting[]
+
+  @@map("users")
+}
+
+model Profile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  targetScore Int      @default(10)
+  targetDate  DateTime?
+  timezone    String   @default("UTC")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("profiles")
+}
+
+model Vocab {
+  id           String   @id @default(cuid())
+  term         String
+  partOfSpeech String?
+  definition   String
+  synonyms     String?
+  antonyms     String?
+  collocations String?
+  example      String?
+  tags         String   // JSON array as string
+  source       String?
+  difficulty   String   @default("M") // E/M/H
+  imageHint    String?
+  audioUrl     String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  srsCards SrsCard[]
+
+  @@map("vocab")
+}
+
+model SrsCard {
+  id             String   @id @default(cuid())
+  vocabId        String
+  userId         String
+  algorithm      String   @default("SM2") // SM2 or FSRS
+  repetitions    Int      @default(0)
+  intervalDays   Float    @default(0)
+  easeFactor     Float    @default(2.5)
+  dueAt          DateTime
+  lastReviewedAt DateTime?
+  lapses         Int      @default(0)
+  qualityHistory String   // JSON array as string
+  suspended      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  vocab     Vocab @relation(fields: [vocabId], references: [id], onDelete: Cascade)
+  user      User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviewLogs ReviewLog[]
+
+  @@map("srs_cards")
+}
+
+model ReviewLog {
+  id        String   @id @default(cuid())
+  srsCardId String
+  userId    String
+  quality   Int      // 0-5 rating
+  timeSpent Int      // seconds
+  createdAt DateTime @default(now())
+
+  srsCard SrsCard @relation(fields: [srsCardId], references: [id], onDelete: Cascade)
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("review_logs")
+}
+
+model Passage {
+  id          String   @id @default(cuid())
+  title       String
+  content     String
+  type        String   // reading, listening
+  difficulty  String   @default("M") // E/M/H
+  source      String?
+  audioUrl    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  questions Question[]
+
+  @@map("passages")
+}
+
+model Question {
+  id        String   @id @default(cuid())
+  passageId String
+  text      String
+  type      String   // MCQ, multiple-select, fill-in, matching, note-taking
+  order     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  passage   Passage    @relation(fields: [passageId], references: [id], onDelete: Cascade)
+  choices   Choice[]
+  answerKey AnswerKey?
+
+  @@map("questions")
+}
+
+model Choice {
+  id         String   @id @default(cuid())
+  questionId String
+  text       String
+  order      Int
+  isCorrect  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@map("choices")
+}
+
+model AnswerKey {
+  id         String   @id @default(cuid())
+  questionId String   @unique
+  answer     String   // JSON for complex answers
+  explanation String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@map("answer_keys")
+}
+
+model ListeningClip {
+  id          String   @id @default(cuid())
+  title       String
+  audioPath   String
+  duration    Int      // seconds
+  transcript  String?
+  source      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("listening_clips")
+}
+
+model WritingPrompt {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  taskType    String   // Task 1: Email, Task 2: Survey Response
+  timeLimit   Int      // minutes
+  wordLimit   Int?
+  template    String?
+  rubric      String?  // JSON
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  drafts WritingDraft[]
+
+  @@map("writing_prompts")
+}
+
+model WritingDraft {
+  id            String   @id @default(cuid())
+  promptId      String
+  userId        String
+  content       String
+  wordCount     Int
+  timeSpent     Int      // seconds
+  selfAssessment String? // JSON rubric scores
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  prompt WritingPrompt @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  user   User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("writing_drafts")
+}
+
+model SpeakingPrompt {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  prepTime    Int      // seconds
+  speakingTime Int     // seconds
+  template    String?
+  rubric      String?  // JSON
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  attempts SpeakingAttempt[]
+
+  @@map("speaking_prompts")
+}
+
+model SpeakingAttempt {
+  id            String   @id @default(cuid())
+  promptId      String
+  userId        String
+  audioPath     String?
+  transcript    String?
+  timeSpent     Int      // seconds
+  selfAssessment String? // JSON rubric scores
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  prompt SpeakingPrompt @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  user   User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("speaking_attempts")
+}
+
+model Tag {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  category    String?  // vocab, question, passage
+  color       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("tags")
+}
+
+model Setting {
+  id      String @id @default(cuid())
+  userId  String @unique
+  key     String
+  value   String // JSON
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("settings")
+}
+
+model Goal {
+  id          String   @id @default(cuid())
+  userId      String
+  type        String   // daily, weekly, monthly
+  target      String   // JSON
+  achieved    Boolean  @default(false)
+  startDate   DateTime
+  endDate     DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("goals")
+}
+
+model ProgressSnapshot {
+  id        String   @id @default(cuid())
+  userId    String
+  date      DateTime
+  metrics   String   // JSON
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("progress_snapshots")
+}
