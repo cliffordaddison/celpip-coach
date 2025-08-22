@@ -107,7 +107,7 @@ export default function WritePage() {
 
   const saveDraft = () => {
     // Save draft logic here
-    console.log('Saving draft:', { content, wordCount, timeSpent: currentTask?.timeLimit * 60 - timeRemaining })
+    console.log('Saving draft:', { content, wordCount, timeSpent: (currentTask?.timeLimit || 0) * 60 - timeRemaining })
   }
 
   const formatTime = (seconds: number) => {

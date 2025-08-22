@@ -83,10 +83,11 @@ async function main() {
   
   // Group by category
   const byCategory = files.reduce((acc, file) => {
-    if (!acc[file.category]) {
-      acc[file.category] = []
+    const category = file.category || 'unknown'
+    if (!acc[category]) {
+      acc[category] = []
     }
-    acc[file.category].push(file)
+    acc[category].push(file)
     return acc
   }, {} as Record<string, FileInfo[]>)
   

@@ -257,7 +257,8 @@ export default function SpeakPage() {
         )}>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <Clock className="w-5 h-5" className={cn(
+              <Clock className={cn(
+                "w-5 h-5",
                 isPreparing ? 'text-blue-500' : 'text-red-500'
               )} />
               <span className={cn(
